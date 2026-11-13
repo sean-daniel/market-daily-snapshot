@@ -1,5 +1,5 @@
 window.FEAR_SNAPSHOT = {
-  "generated_at": "2026-11-13T11:44:23+08:00",
+  "generated_at": "2026-11-13T12:46:28+08:00",
   "source": "app.jiucaishuo.com",
   "sh": {
     "fear_greed": 22.25,
