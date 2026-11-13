@@ -44,3 +44,18 @@ jobs:
             git commit -m "chore: 更新恐贪数据"
             git push
           fi
+
+      - name: 发送每日邮件
+        if: github.event_name == 'workflow_dispatch' || github.event.schedule == '40 7 * * 1-5'
+        env:
+          MAIL_USERNAME: ${{ secrets.MAIL_USERNAME }}
+          MAIL_PASSWORD: ${{ secrets.MAIL_PASSWORD }}
+          MAIL_TO: ${{ secrets.MAIL_TO }}
+          MAIL_HOST: ${{ secrets.MAIL_HOST }}
+          MAIL_PORT: ${{ secrets.MAIL_PORT }}
+        run: |
+          if [ -z "$MAIL_USERNAME" ] || [ -z "$MAIL_PASSWORD" ] || [ -z "$MAIL_TO" ]; then
+            echo "未配置邮件密钥（MAIL_USERNAME / MAIL_PASSWORD / MAIL_TO），跳过发信"
+            exit 0
+          fi
+          python scripts/daily_mail.py

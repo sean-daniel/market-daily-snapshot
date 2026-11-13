@@ -55,3 +55,26 @@ Actions 会在每个工作日 15:40 和次日 08:10（北京时间）自动跑�
 GitHub 仓库 → Actions → 更新恐贪数据 → Run workflow。
 
 若某天抓取失败，工作流会保留上一次的数据并在 JSON 里标 `stale`，页面仍可打开。
+
+## 邮件推送
+
+每个工作日 15:40（A股收盘后）那一次会额外把五行模板发到指定邮箱；手动触发也会发。08:10 那次只更新数据、不发信，避免一天两封。
+
+发信走你自己的 SMTP 账号，需要在仓库里加 3 个 Secret（Settings → Secrets and variables → Actions → New repository secret）：
+
+| Secret | 说明 | 例子 |
+|---|---|---|
+| `MAIL_USERNAME` | 发件邮箱完整地址 | `you@qq.com` |
+| `MAIL_PASSWORD` | 邮箱**授权码**（不是登录密码） | 16 位授权码 |
+| `MAIL_TO` | 收件人，多个用英文逗号分隔 | `you@qq.com` |
+
+SMTP 服务器按发件域名自动推断（qq.com / 163.com / 126.com / gmail.com / outlook.com）；其他邮箱再加 `MAIL_HOST` 和 `MAIL_PORT`。
+
+QQ 邮箱授权码在「设置 → 账户 → POP3/IMAP/SMTP 服务」里开启后获取；163 类似。没有配置这三个 Secret 时，工作流自动跳过发信，不会失败。
+
+本地试跑：
+
+```bash
+python3 scripts/daily_mail.py --dry-run     # 只打印邮件内容
+MAIL_USERNAME=... MAIL_PASSWORD=... MAIL_TO=... python3 scripts/daily_mail.py
+```
