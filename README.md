@@ -1,5 +1,7 @@
 # 每日市场模板（网页版）
 
+> 在线：https://sean-daniel.github.io/market-daily-snapshot/
+
 打开网页自动出五行结果，不需要调用 AI：
 
 ```text
