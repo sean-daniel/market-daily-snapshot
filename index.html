@@ -1,0 +1,313 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>每日市场模板</title>
+<style>
+  :root {
+    --bg: #0b0d10;
+    --card: #14171c;
+    --line: #23272e;
+    --text: #e7ecf3;
+    --muted: #8b95a5;
+    --up: #f0455f;
+    --down: #23c07f;
+    --accent: #d8b25c;
+  }
+  * { box-sizing: border-box; }
+  html, body { height: 100%; }
+  body {
+    margin: 0;
+    background:
+      radial-gradient(900px 500px at 12% -8%, #1a2028 0%, transparent 60%),
+      radial-gradient(700px 420px at 100% 0%, #17201d 0%, transparent 55%),
+      var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "PingFang SC",
+      "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+    -webkit-font-smoothing: antialiased;
+    padding: 40px 18px 56px;
+  }
+  .wrap { width: 100%; max-width: 660px; margin: 0 auto; }
+
+  .top {
+    display: flex; align-items: flex-end; justify-content: space-between;
+    gap: 16px; margin-bottom: 18px;
+  }
+  h1 { font-size: 20px; font-weight: 600; margin: 0 0 6px; letter-spacing: .02em; }
+  .sub { font-size: 12px; color: var(--muted); letter-spacing: .04em; }
+  .actions { display: flex; align-items: center; gap: 8px; }
+  .pill {
+    font-size: 11px; letter-spacing: .08em; padding: 5px 10px; border-radius: 999px;
+    border: 1px solid var(--line); color: var(--muted); background: #101318;
+    white-space: nowrap;
+  }
+  .pill.live { color: var(--accent); border-color: #3a3220; background: #1a1710; }
+  .pill.err { color: #ff7b7b; border-color: #3a2222; background: #1a1010; }
+  button {
+    font: inherit; font-size: 12px; color: var(--text); cursor: pointer;
+    background: #171b21; border: 1px solid var(--line); border-radius: 8px;
+    padding: 6px 12px; transition: .15s;
+  }
+  button:hover { background: #1e242c; border-color: #333a44; }
+  button:active { transform: translateY(1px); }
+
+  .card {
+    background: linear-gradient(180deg, #161a20 0%, var(--card) 100%);
+    border: 1px solid var(--line);
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 24px 60px -30px rgba(0,0,0,.9);
+  }
+  .row {
+    display: flex; align-items: baseline; justify-content: space-between;
+    gap: 18px; padding: 17px 22px; border-top: 1px solid var(--line);
+  }
+  .row:first-child { border-top: 0; }
+  .label { font-size: 14px; color: #b9c2cf; white-space: nowrap; }
+  .label .tag {
+    font-size: 10px; color: var(--muted); border: 1px solid var(--line);
+    border-radius: 4px; padding: 1px 5px; margin-left: 6px; vertical-align: 1px;
+  }
+  .value {
+    font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
+    font-size: 19px; font-weight: 600; letter-spacing: -.01em;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+  }
+  .value.small { font-size: 17px; }
+  .up { color: var(--up); }
+  .down { color: var(--down); }
+  .flat { color: var(--text); }
+  .fear { color: #e7ecf3; }
+  .hi { color: var(--muted); font-weight: 500; font-size: 15px; }
+  .pair { display: flex; align-items: baseline; gap: 8px; }
+  .skel { color: #3d444e; }
+
+  .foot {
+    margin-top: 14px; font-size: 11.5px; line-height: 1.7; color: var(--muted);
+  }
+  .foot b { color: #a8b2c0; font-weight: 500; }
+  .toast {
+    position: fixed; left: 50%; bottom: 28px; transform: translate(-50%, 12px);
+    background: #1d232b; border: 1px solid var(--line); color: var(--text);
+    padding: 9px 16px; border-radius: 999px; font-size: 12px;
+    opacity: 0; pointer-events: none; transition: .22s;
+  }
+  .toast.show { opacity: 1; transform: translate(-50%, 0); }
+
+  @media (max-width: 520px) {
+    body { padding: 26px 12px 40px; }
+    .row { padding: 15px 16px; gap: 10px; }
+    .value { font-size: 17px; }
+    .hi { font-size: 13px; }
+    .label { font-size: 13px; }
+    .top { flex-direction: column; align-items: flex-start; gap: 10px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <div class="top">
+    <div>
+      <h1>每日市场模板</h1>
+      <div class="sub" id="sub">日线 MACD 12/26/9 · 恐贪近45日高点</div>
+    </div>
+    <div class="actions">
+      <span class="pill" id="status">加载中</span>
+      <button id="copy">复制</button>
+      <button id="refresh">刷新</button>
+    </div>
+  </div>
+
+  <div class="card" id="card">
+    <div class="row"><span class="label">深圳指数日macd</span><span class="value skel" id="v-sz">--</span></div>
+    <div class="row"><span class="label">创业板指数日macd</span><span class="value skel" id="v-cy">--</span></div>
+    <div class="row"><span class="label">上证恐贪指数</span><span class="value skel" id="v-sh">--</span></div>
+    <div class="row"><span class="label">纳斯达克指数日macd</span><span class="value skel" id="v-nq">--</span></div>
+    <div class="row"><span class="label">纳指恐贪指数</span><span class="value skel" id="v-us">--</span></div>
+  </div>
+
+  <div class="foot" id="foot">正在获取行情…</div>
+</div>
+<div class="toast" id="toast">已复制</div>
+
+<script>
+const SHENZHEN = "sz399001";
+const CHINEXT = "sz399006";
+const NASDAQ = "us.NDX";
+const KLINE = "https://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param={symbol},day,,,320,qfq";
+const FEAR_URL = "data/fear.json";
+
+const $ = (id) => document.getElementById(id);
+
+function ema(values, period) {
+  const alpha = 2 / (period + 1);
+  const out = [];
+  for (const value of values) {
+    out.push(out.length ? value * alpha + out[out.length - 1] * (1 - alpha) : value);
+  }
+  return out;
+}
+
+function macdOf(closes) {
+  const fast = ema(closes, 12);
+  const slow = ema(closes, 26);
+  const dif = fast.map((v, i) => v - slow[i]);
+  const dea = ema(dif, 9);
+  const n = closes.length - 1;
+  return {
+    close: closes[n],
+    dif: dif[n],
+    dea: dea[n],
+    hist: 2 * (dif[n] - dea[n]),
+  };
+}
+
+async function loadIndex(symbol) {
+  const url = KLINE.replace("{symbol}", encodeURIComponent(symbol));
+  const response = await fetch(url, { cache: "no-store" });
+  if (!response.ok) throw new Error("行情接口 " + response.status);
+  const payload = await response.json();
+  const node = (payload.data || {})[symbol];
+  const rows = (node && (node.day || node.qfqday)) || [];
+  const ordered = rows
+    .filter((row) => row.length >= 3)
+    .map((row) => [String(row[0]), Number(row[2])])
+    .sort((a, b) => (a[0] < b[0] ? -1 : 1));
+  if (ordered.length < 60) throw new Error(symbol + " 日K不足");
+  const closes = ordered.map((row) => row[1]);
+  const result = macdOf(closes);
+  result.date = ordered[ordered.length - 1][0];
+  return result;
+}
+
+async function loadFear() {
+  const response = await fetch(FEAR_URL + "?t=" + Date.now(), { cache: "no-store" });
+  if (!response.ok) throw new Error("恐贪数据 " + response.status);
+  return response.json();
+}
+
+const signed = (value) => (value >= 0 ? "+" : "") + value.toFixed(2);
+const tone = (value) => (value > 0 ? "up" : value < 0 ? "down" : "flat");
+
+function setMacd(id, data) {
+  const node = $(id);
+  node.className = "value " + tone(data.hist);
+  node.textContent = signed(data.hist);
+  node.title = `DIF ${signed(data.dif)} / DEA ${signed(data.dea)} · ${data.date}`;
+}
+
+function setFear(id, item) {
+  const node = $(id);
+  const value = Number(item.fear_greed);
+  const high = Number(item.fear_greed_45_high);
+  node.className = "value fear";
+  node.innerHTML =
+    `<span class="pair">${value.toFixed(2)}` +
+    `<span class="hi">· 45日高 ${high.toFixed(2)}</span></span>`;
+  node.title = `恐贪 ${value.toFixed(2)}，近45日高点 ${high.toFixed(2)} · ${item.last_date}`;
+}
+
+let lastText = "";
+
+async function load() {
+  $("status").className = "pill";
+  $("status").textContent = "加载中";
+  $("foot").textContent = "正在获取行情…";
+
+  const [sz, cy, nq, fear] = await Promise.allSettled([
+    loadIndex(SHENZHEN),
+    loadIndex(CHINEXT),
+    loadIndex(NASDAQ),
+    loadFear(),
+  ]);
+
+  const errors = [];
+  const pick = (result, name) => {
+    if (result.status === "fulfilled") return result.value;
+    errors.push(`${name}：${result.reason.message || result.reason}`);
+    return null;
+  };
+  const shenzhen = pick(sz, "深圳指数");
+  const chinext = pick(cy, "创业板指数");
+  const nasdaq = pick(nq, "纳斯达克");
+  const fearData = pick(fear, "恐贪数据");
+
+  if (shenzhen) setMacd("v-sz", shenzhen);
+  if (chinext) setMacd("v-cy", chinext);
+  if (nasdaq) setMacd("v-nq", nasdaq);
+  if (fearData) {
+    setFear("v-sh", fearData.sh);
+    setFear("v-us", fearData.us);
+  }
+
+  const now = new Date();
+  const hhmm = now.toTimeString().slice(0, 5);
+  const aDate = (shenzhen || chinext || {}).date || "--";
+  const intraday = aDate === localDate(now) && now.getHours() < 15;
+
+  $("status").className = "pill" + (errors.length ? " err" : intraday ? " live" : "");
+  $("status").textContent = errors.length
+    ? "部分数据失败"
+    : intraday
+    ? "盘中 · 暂定"
+    : "已收盘";
+
+  const fearNote = fearData
+    ? `上证恐贪 ${fearData.sh.last_date}，美股恐贪 ${fearData.us.last_date}（每日自动更新）`
+    : "";
+  $("foot").innerHTML =
+    `A股 <b>${aDate} ${hhmm}</b> ${intraday ? "盘中，MACD 为暂定值，15:00 后为准" : "收盘"}；` +
+    `${fearNote}。<br>45日高点取恐贪指数自身最近 45 个数据点的最高值。` +
+    (errors.length ? `<br><span style="color:#ff7b7b">${errors.join("；")}</span>` : "");
+
+  lastText =
+    `深圳指数日macd：${shenzhen ? signed(shenzhen.hist) : "--"}\n` +
+    `创业板指数日macd：${chinext ? signed(chinext.hist) : "--"}\n` +
+    `上证恐贪指数：${fearData ? Number(fearData.sh.fear_greed).toFixed(2) : "--"}，` +
+    `上证恐贪指数近45日高点：${fearData ? Number(fearData.sh.fear_greed_45_high).toFixed(2) : "--"}\n` +
+    `纳斯达克指数日macd：${nasdaq ? signed(nasdaq.hist) : "--"}\n` +
+    `纳指恐贪指数：${fearData ? Number(fearData.us.fear_greed).toFixed(2) : "--"}，` +
+    `纳指恐贪指数的近45日高点：${fearData ? Number(fearData.us.fear_greed_45_high).toFixed(2) : "--"}`;
+}
+
+function localDate(date) {
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}`;
+}
+
+function toast(text) {
+  const node = $("toast");
+  node.textContent = text;
+  node.classList.add("show");
+  clearTimeout(toast.timer);
+  toast.timer = setTimeout(() => node.classList.remove("show"), 1600);
+}
+
+$("refresh").addEventListener("click", () => {
+  load().catch((error) => toast("刷新失败：" + error.message));
+});
+
+$("copy").addEventListener("click", async () => {
+  try {
+    await navigator.clipboard.writeText(lastText);
+    toast("已复制五行模板");
+  } catch {
+    toast("复制失败，请手动选中");
+  }
+});
+
+load().catch((error) => {
+  $("status").className = "pill err";
+  $("status").textContent = "加载失败";
+  $("foot").textContent = error.message;
+});
+
+setInterval(() => {
+  if (document.visibilityState === "visible") load().catch(() => {});
+}, 300000);
+</script>
+</body>
+</html>
