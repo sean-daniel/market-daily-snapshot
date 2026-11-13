@@ -50,23 +50,23 @@ python3 -m http.server 8787
 
 ## 更新恐贪数据
 
-Actions 会在每个工作日 15:40 和次日 08:10（北京时间）自动跑。也可以手动触发：
+Actions 会在每个工作日 09:00 和 15:40（北京时间）自动跑：09:00 那次同时发邮件，15:40 那次只刷数据。
 
-GitHub 仓库 → Actions → 更新恐贪数据 → Run workflow。
+立即发送（按钮）：GitHub 仓库 → Actions → 更新恐贪数据 → Run workflow，点一下就会重新抓数并发邮件。网页页脚也有「立即发送邮件 →」的入口。
 
 若某天抓取失败，工作流会保留上一次的数据并在 JSON 里标 `stale`，页面仍可打开。
 
 ## 邮件推送
 
-每个工作日 15:40（A股收盘后）那一次会额外把五行模板发到指定邮箱；手动触发也会发。08:10 那次只更新数据、不发信，避免一天两封。
+每个工作日 09:00 把五行模板发到 `920909238@qq.com`；点 Run workflow 也会立即发。
 
-发信走你自己的 SMTP 账号，需要在仓库里加 3 个 Secret（Settings → Secrets and variables → Actions → New repository secret）：
+发信走你自己的 SMTP 账号（`seandaniel@163.com`，smtp.163.com:465），仓库里已配好 3 个 Secret：
 
 | Secret | 说明 | 例子 |
 |---|---|---|
-| `MAIL_USERNAME` | 发件邮箱完整地址 | `you@qq.com` |
+| `MAIL_USERNAME` | 发件邮箱完整地址 | `seandaniel@163.com` |
 | `MAIL_PASSWORD` | 邮箱**授权码**（不是登录密码） | 16 位授权码 |
-| `MAIL_TO` | 收件人，多个用英文逗号分隔 | `you@qq.com` |
+| `MAIL_TO` | 收件人，多个用英文逗号分隔 | `920909238@qq.com` |
 
 SMTP 服务器按发件域名自动推断（qq.com / 163.com / 126.com / gmail.com / outlook.com）；其他邮箱再加 `MAIL_HOST` 和 `MAIL_PORT`。
 
