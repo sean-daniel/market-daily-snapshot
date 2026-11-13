@@ -1,9 +1,10 @@
 {
-  "generated_at": "2026-11-13T11:12:07+08:00",
+  "generated_at": "2026-11-13T11:33:04+08:00",
   "source": "app.jiucaishuo.com",
   "sh": {
     "fear_greed": 22.25,
     "fear_greed_45_high": 50.49,
+    "fear_greed_45_low": 2.07,
     "last_date": "2026-11-12",
     "series": [
       [
@@ -251,6 +252,7 @@
   "us": {
     "fear_greed": 39.94,
     "fear_greed_45_high": 47.03,
+    "fear_greed_45_low": 16.69,
     "last_date": "2026-11-12",
     "series": [
       [

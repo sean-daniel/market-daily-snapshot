@@ -99,9 +99,9 @@
 
   @media (max-width: 520px) {
     body { padding: 26px 12px 40px; }
-    .row { padding: 15px 16px; gap: 10px; }
-    .value { font-size: 17px; }
-    .hi { font-size: 13px; }
+    .row { padding: 15px 16px; gap: 6px; flex-wrap: wrap; }
+    .value { font-size: 17px; margin-left: auto; }
+    .hi { font-size: 12px; }
     .label { font-size: 13px; }
     .top { flex-direction: column; align-items: flex-start; gap: 10px; }
   }
@@ -112,7 +112,7 @@
   <div class="top">
     <div>
       <h1>每日市场模板</h1>
-      <div class="sub" id="sub">日线 MACD 12/26/9 · 恐贪近45日高点</div>
+      <div class="sub" id="sub">日线 MACD 12/26/9 · 恐贪 45 日高低点</div>
     </div>
     <div class="actions">
       <span class="pill" id="status">加载中</span>
@@ -133,6 +133,7 @@
 </div>
 <div class="toast" id="toast">已复制</div>
 
+<script src="data/fear.js"></script>
 <script>
 const SHENZHEN = "sz399001";
 const CHINEXT = "sz399006";
@@ -184,9 +185,14 @@ async function loadIndex(symbol) {
 }
 
 async function loadFear() {
-  const response = await fetch(FEAR_URL + "?t=" + Date.now(), { cache: "no-store" });
-  if (!response.ok) throw new Error("恐贪数据 " + response.status);
-  return response.json();
+  try {
+    const response = await fetch(FEAR_URL + "?t=" + Date.now(), { cache: "no-store" });
+    if (!response.ok) throw new Error("恐贪数据 " + response.status);
+    return await response.json();
+  } catch (error) {
+    if (window.FEAR_SNAPSHOT) return window.FEAR_SNAPSHOT;
+    throw error;
+  }
 }
 
 const signed = (value) => (value >= 0 ? "+" : "") + value.toFixed(2);
@@ -203,11 +209,14 @@ function setFear(id, item) {
   const node = $(id);
   const value = Number(item.fear_greed);
   const high = Number(item.fear_greed_45_high);
+  const lowRaw = Number(item.fear_greed_45_low);
+  const low = Number.isFinite(lowRaw) ? lowRaw.toFixed(2) : "--";
   node.className = "value fear";
   node.innerHTML =
     `<span class="pair">${value.toFixed(2)}` +
-    `<span class="hi">· 45日高 ${high.toFixed(2)}</span></span>`;
-  node.title = `恐贪 ${value.toFixed(2)}，近45日高点 ${high.toFixed(2)} · ${item.last_date}`;
+    `<span class="hi">· 高 ${high.toFixed(2)} / 低 ${low}</span></span>`;
+  node.title =
+    `恐贪 ${value.toFixed(2)}，近45日高 ${high.toFixed(2)} / 低 ${low} · ${item.last_date}`;
 }
 
 let lastText = "";
@@ -260,17 +269,19 @@ async function load() {
     : "";
   $("foot").innerHTML =
     `A股 <b>${aDate} ${hhmm}</b> ${intraday ? "盘中，MACD 为暂定值，15:00 后为准" : "收盘"}；` +
-    `${fearNote}。<br>45日高点取恐贪指数自身最近 45 个数据点的最高值。` +
+    `${fearNote}。<br>45日高低点取恐贪指数自身最近 45 个数据点的最高/最低值。` +
     (errors.length ? `<br><span style="color:#ff7b7b">${errors.join("；")}</span>` : "");
 
   lastText =
     `深圳指数日macd：${shenzhen ? signed(shenzhen.hist) : "--"}\n` +
     `创业板指数日macd：${chinext ? signed(chinext.hist) : "--"}\n` +
     `上证恐贪指数：${fearData ? Number(fearData.sh.fear_greed).toFixed(2) : "--"}，` +
-    `上证恐贪指数近45日高点：${fearData ? Number(fearData.sh.fear_greed_45_high).toFixed(2) : "--"}\n` +
+    `上证恐贪指数近45日高点：${fearData ? Number(fearData.sh.fear_greed_45_high).toFixed(2) : "--"}，` +
+    `近45日低点：${fearData && Number.isFinite(Number(fearData.sh.fear_greed_45_low)) ? Number(fearData.sh.fear_greed_45_low).toFixed(2) : "--"}\n` +
     `纳斯达克指数日macd：${nasdaq ? signed(nasdaq.hist) : "--"}\n` +
     `纳指恐贪指数：${fearData ? Number(fearData.us.fear_greed).toFixed(2) : "--"}，` +
-    `纳指恐贪指数的近45日高点：${fearData ? Number(fearData.us.fear_greed_45_high).toFixed(2) : "--"}`;
+    `纳指恐贪指数的近45日高点：${fearData ? Number(fearData.us.fear_greed_45_high).toFixed(2) : "--"}，` +
+    `近45日低点：${fearData && Number.isFinite(Number(fearData.us.fear_greed_45_low)) ? Number(fearData.us.fear_greed_45_low).toFixed(2) : "--"}`;
 }
 
 function localDate(date) {
@@ -292,12 +303,34 @@ $("refresh").addEventListener("click", () => {
 
 $("copy").addEventListener("click", async () => {
   try {
-    await navigator.clipboard.writeText(lastText);
+    if (navigator.clipboard && window.isSecureContext) {
+      await navigator.clipboard.writeText(lastText);
+    } else {
+      legacyCopy(lastText);
+    }
     toast("已复制五行模板");
   } catch {
-    toast("复制失败，请手动选中");
+    try {
+      legacyCopy(lastText);
+      toast("已复制五行模板");
+    } catch {
+      toast("复制失败，请手动选中");
+    }
   }
 });
+
+function legacyCopy(text) {
+  const area = document.createElement("textarea");
+  area.value = text;
+  area.setAttribute("readonly", "");
+  area.style.position = "fixed";
+  area.style.top = "-1000px";
+  document.body.appendChild(area);
+  area.select();
+  const ok = document.execCommand("copy");
+  document.body.removeChild(area);
+  if (!ok) throw new Error("copy failed");
+}
 
 load().catch((error) => {
   $("status").className = "pill err";

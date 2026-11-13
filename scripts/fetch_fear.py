@@ -56,9 +56,11 @@ EXTRACT_JS = """
   if (series.length < 45) return null;
 
   const tail = series.slice(-45);
+  const values = tail.map((row) => row[1]);
   return {
     fear_greed: series[series.length - 1][1],
-    fear_greed_45_high: Math.max(...tail.map((row) => row[1])),
+    fear_greed_45_high: Math.max(...values),
+    fear_greed_45_low: Math.min(...values),
     last_date: series[series.length - 1][0],
     series: series.slice(-60),
   };
@@ -126,6 +128,14 @@ def main() -> int:
     OUTPUT.parent.mkdir(parents=True, exist_ok=True)
     OUTPUT.write_text(
         json.dumps(result, ensure_ascii=False, indent=2) + "\n", encoding="utf-8"
+    )
+    # 供 file:// 直接打开时使用：<script src> 不受 CORS 限制
+    script = OUTPUT.with_suffix(".js")
+    script.write_text(
+        "window.FEAR_SNAPSHOT = "
+        + json.dumps(result, ensure_ascii=False, indent=2)
+        + ";\n",
+        encoding="utf-8",
     )
     print(f"已写入 {OUTPUT}")
     if failed:
