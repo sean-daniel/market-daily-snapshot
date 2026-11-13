@@ -1,0 +1,46 @@
+name: 更新恐贪数据
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "40 7 * * 1-5"
+    - cron: "10 0 * * 2-6"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: fear-update
+  cancel-in-progress: false
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: 安装 Playwright
+        run: |
+          python -m pip install --upgrade pip
+          pip install playwright
+          python -m playwright install --with-deps chromium
+
+      - name: 抓取韭圈儿恐贪
+        run: python scripts/fetch_fear.py
+
+      - name: 提交数据
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add data/fear.json
+          if git diff --cached --quiet; then
+            echo "数据无变化"
+          else
+            git commit -m "chore: 更新恐贪数据"
+            git push
+          fi
